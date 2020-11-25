@@ -137,7 +137,6 @@ def largestComp(fileLoc):
 
 def main():
     nk.setNumberOfThreads(4)
-    print('test')
     name = 'Yeast1'
     largestComp('TextFiles/' + str(name) + '.txt')
     plt.grid(True)
