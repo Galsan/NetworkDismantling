@@ -1,98 +1,135 @@
+from random import randrange
+
 import networkit as nk
 import sys
 import matplotlib.pyplot as plt
 import math
 import GraphTool as gt
 
+# Adaptive бишээр 10, 15, 20, 25 хувийг устгасны дараах үр дүн
+END = 25
+BEGIN = 0
+dat_dc = []
+dat_bc = []
+dat_ev = []
+dat_cc = []
+dat_random = []
+percents = [i for i in range(BEGIN, END + 1, 5)]
 
-def plot(ax, x, y, title):
-    ax.set_title(title)
-    ax.plot(x, y)
+
+def zipLargestComponentNodeWithValue(data, largestCompNodes):
+    # Хамгийн том компонентийн оноонуудаар лист үүсгээд оройн индексийг zip хийнэ
+    largestComp = []
+    for i in largestCompNodes:
+        largestComp.append(data[i])
+    largestComp = zip(largestCompNodes, largestComp)
+    return largestComp
 
 
-def addLargeComp(fileLoc):
-    file = open(fileLoc)
-    G, n = read_graph(file)
-    cc = nk.components.ConnectedComponents(G)
-    cc.run()
-    # print(cc.getComponentSizes())
+def top_nodes(data, one_per):
+    # Хамгийн их оноотой оройнуудыг буцаана
+    return sorted(data, key=lambda x: x[1], reverse=True)[:one_per]
 
-    bc = nk.centrality.EstimateBetweenness(G, math.log2(n))
-    bc.run()
-    bc_data = bc.scores()
-    C = math.ceil(n / 10)
 
-    # bc_procent10 = procent(G.__copy__(), remove_nodes(bc_data, 10, n), bc_data, n, C)
-    # bc_procent15 = procent(G.__copy__(), remove_nodes(bc_data, 15, n), bc_data, n, C)
-    # bc_procent20 = procent(G.__copy__(), remove_nodes(bc_data, 20, n), bc_data, n, C)
-    # bc_procent25 = procent(G.__copy__(), remove_nodes(bc_data, 25, n), bc_data, n, C)
-
-    dc = nk.centrality.DegreeCentrality(G)
+def not_adapt_dc(G, per, n):
+    largest = nk.components.ConnectedComponents.extractLargestConnectedComponent(G)
+    dc = nk.centrality.DegreeCentrality(largest)
     dc.run()
-    dc_data = dc.scores()
-
-    dc_procent_10 = procent(G.__copy__(), top_nodes(dc_data, 10, n), dc_data, n, C)
-    dc_procent_15 = procent(G.__copy__(), top_nodes(dc_data, 15, n), dc_data, n, C)
-    dc_procent_20 = procent(G.__copy__(), top_nodes(dc_data, 20, n), dc_data, n, C)
-    dc_procent_25 = procent(G.__copy__(), top_nodes(dc_data, 25, n), dc_data, n, C)
-
-    print(dc_procent_10)
-    print(dc_procent_15)
-    print(dc_procent_20)
-    print(dc_procent_25)
+    largest_data = zipLargestComponentNodeWithValue(dc.scores(), largest.nodes())
+    remove_nodes = top_nodes(largest_data, per)
+    for i in [q for q, j in remove_nodes]:
+        G.removeNode(i)
+    dat_dc.append(nk.components.ConnectedComponents.extractLargestConnectedComponent(G).numberOfNodes() / n)
 
 
-def procent(G, scores, data, n, C):
-    del_index = []
-    for i in scores:
-        index = data.index(i)
-        G.removeNode(index)
-        del_index.append(index)
+def not_adapt_bc(G, per, n):
+    largest = nk.components.ConnectedComponents.extractLargestConnectedComponent(G)
+    bc = nk.centrality.EstimateBetweenness(largest, math.log2(n)*10)
+    bc.run()
+    largest_data = zipLargestComponentNodeWithValue(bc.scores(), largest.nodes())
+    remove_nodes = top_nodes(largest_data, per)
+    for i in [q for q, j in remove_nodes]:
+        G.removeNode(i)
+    dat_bc.append(nk.components.ConnectedComponents.extractLargestConnectedComponent(G).numberOfNodes() / n)
 
-    cc = nk.components.ConnectedComponents(G)
+
+def not_adapt_cc(G, per, n):
+    largest = nk.components.ConnectedComponents.extractLargestConnectedComponent(G)
+    cc = nk.centrality.ApproxCloseness(largest, math.log2(n)*10)
     cc.run()
+    largest_data = zipLargestComponentNodeWithValue(cc.scores(), largest.nodes())
+    remove_nodes = top_nodes(largest_data, per)
 
-    comp_sizes = [len(i) for i in cc.getComponents()]
+    for i in [q for q, j in remove_nodes]:
+        G.removeNode(i)
+    # cc = nk.centrality.TopCloseness(largest, per)
+    # cc.run()
+    # for i in cc.topkNodesList():
+    #     G.removeNode(i)
+    dat_cc.append(nk.components.ConnectedComponents.extractLargestConnectedComponent(G).numberOfNodes() / n)
 
-    sum = 0
-    for i in comp_sizes:
-        if i > C:
-            sum += i
-    return sum / n
+
+def not_adapt_ev(G, per, n):
+    largest = nk.components.ConnectedComponents.extractLargestConnectedComponent(G)
+    ev = nk.centrality.EigenvectorCentrality(largest)
+    ev.run()
+    largest_data = zipLargestComponentNodeWithValue(ev.scores(), largest.nodes())
+    remove_nodes = top_nodes(largest_data, per)
+    for i in [q for q, j in remove_nodes]:
+        G.removeNode(i)
+    dat_ev.append(nk.components.ConnectedComponents.extractLargestConnectedComponent(G).numberOfNodes() / n)
+
+
+def not_adapt_random(G, per, n):
+    ctr = 0
+    while True:
+        key = randrange(0, n)
+        if G.hasNode(key):
+            G.removeNode(key)
+            ctr += 1
+        if ctr == per:
+            break
+    dat_random.append(nk.components.ConnectedComponents.extractLargestConnectedComponent(G).numberOfNodes() / n)
 
 
 def largestComp(fileLoc):
     file = open(fileLoc)
     G, n = gt.read_graph(file)
 
-    bc = nk.centrality.DegreeCentrality(G)
-    bc.run()
-    bc_data = bc.scores()
+    # Эхлэх үеийн хамгийн том компонент
+    largestComponent = nk.components.ConnectedComponents.extractLargestConnectedComponent(G).numberOfNodes()
 
-    remove_nodes = top_nodes(bc_data, 40, n)
+    dat_dc.append(largestComponent / n)
+    dat_bc.append(largestComponent / n)
+    dat_cc.append(largestComponent / n)
+    dat_ev.append(largestComponent / n)
+    dat_random.append(largestComponent / n)
 
-    for i in remove_nodes:
-        G.removeNode(bc_data.index(i))
-
-    cc = nk.components.ConnectedComponents(G)
-    cc.run()
-    comps = cc.getComponentSizes()
-
-    print(comps)
-    print(max(comps))
-
-    print(nk.components.ConnectedComponents.extractLargestConnectedComponent(G).numberOfNodes() / n)
-
-
-def top_nodes(data, pro, n):
-    length = math.ceil(n / 100) * pro  # % нөд устгана
-    scores = sorted(data, reverse=True)[:length]
-    return scores
+    for i in percents[1:]:
+        not_adapt_dc(G.__copy__(), math.ceil(n / 100 * i), n)
+        not_adapt_bc(G.__copy__(), math.ceil(n / 100 * i), n)
+        not_adapt_cc(G.__copy__(), math.ceil(n / 100 * i), n)
+        not_adapt_ev(G.__copy__(), math.ceil(n / 100 * i), n)
+        not_adapt_random(G.__copy__(), math.ceil(n / 100 * i), n)
 
 
 def main():
     nk.setNumberOfThreads(4)
-    largestComp('TextFiles/ER.txt')
+    name = 'Astroph'
+    largestComp('TextFiles/' + str(name) + '.txt')
+    plt.grid(True)
+    plt.plot(percents, dat_dc, label='Degree centrality', color='#000000', linestyle='solid')
+    plt.plot(percents, dat_bc, label='Betweenness centrality', color='#000000', linestyle='dashed')
+    plt.plot(percents, dat_cc, label='Closeness centrality', color='#8a8686', linestyle='solid')
+    plt.plot(percents, dat_ev, label='EigenVector centrality', color='#8a8686', linestyle='dashed')
+    plt.plot(percents, dat_random, label='Random', color='#d9d4d4', linestyle='solid')
+
+    plt.title('Харьцуулалт (' + str(name) + ')')
+    plt.xlabel('Устгасан оройн тоо (Хувиар)')
+    plt.ylabel('Хамгийн том компонентийн хэмжээ')
+    plt.legend()
+    plt.savefig('NotAdaptiveDismantlingFigure/' + str(name) + '.png')
+    plt.show()
 
 
 if __name__ == '__main__':
