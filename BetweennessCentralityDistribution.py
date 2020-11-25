@@ -34,8 +34,6 @@ def saveFig(name):
         if counter[i] == 0:
             counter[i] += 1
 
-    print(bins)
-
     # Хамгийн их тооны орон тоолох зориулалттай хувьсагч
     digitCtr = 0
     while mx != 0:
