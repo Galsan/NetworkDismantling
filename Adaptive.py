@@ -4,6 +4,7 @@ import networkit as nk
 import sys
 import matplotlib.pyplot as plt
 import math
+import GraphTool as gt
 
 END = 20
 BEGIN = 0
@@ -14,24 +15,6 @@ dat_cc = []
 dat_random = []
 per = [i for i in range(BEGIN, END + 1)]
 
-
-def read_graph(fin):
-    n = int(fin.readline())
-    G = nk.Graph(n)
-    while True:
-        try:
-            line = fin.readline()
-        except:
-            break
-        line = line.split()
-        if len(line) == 0:
-            break
-        x = int(line[0][:-1])
-        arr = [int(y) for y in line[1:]]
-        for y in arr:
-            if not G.hasEdge(x, y):
-                G.addEdge(x, y, addMissing=True)
-    return G, n
 
 
 def zipLargestComponentNodeWithValue(data, largestCompNodes):
@@ -111,7 +94,7 @@ def adapt_random(G, one_per, n):
 
 def largestComp(fileLoc):
     file = open(fileLoc)
-    G, n = read_graph(file)
+    G, n = gt.read_graph(file)
     G_bc = G.__copy__()
     G_cc = G.__copy__()
     G_ev = G.__copy__()
@@ -150,7 +133,7 @@ def main():
     plt.xlabel('Устгасан оройн тоо (Хувиар)')
     plt.ylabel('Хамгийн том компонентийн хэмжээ')
     plt.legend()
-    plt.savefig('figure/' + str(name) + '.png')
+    plt.savefig('NetworkDismantlingFigure/' + str(name) + '.png')
     plt.show()
 
 

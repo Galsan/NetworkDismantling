@@ -2,25 +2,7 @@ import networkit as nk
 import sys
 import matplotlib.pyplot as plt
 import math
-
-
-def read_graph(fin):
-    n = int(fin.readline())
-    G = nk.Graph(n)
-
-    while True:
-        try:
-            line = fin.readline()
-        except:
-            break
-        line = line.split()
-        if len(line) == 0:
-            break
-        x = int(line[0][:-1])
-        arr = [int(y) for y in line[1:]]
-        for y in arr:
-            G.addEdge(x, y, addMissing=True)
-    return G, n
+import GraphTool as gt
 
 
 def plot(ax, x, y, title):
@@ -81,7 +63,7 @@ def procent(G, scores, data, n, C):
 
 def largestComp(fileLoc):
     file = open(fileLoc)
-    G, n = read_graph(file)
+    G, n = gt.read_graph(file)
 
     bc = nk.centrality.DegreeCentrality(G)
     bc.run()
@@ -99,7 +81,7 @@ def largestComp(fileLoc):
     print(comps)
     print(max(comps))
 
-    print(nk.components.ConnectedComponents.extractLargestConnectedComponent(G).numberOfNodes()/n)
+    print(nk.components.ConnectedComponents.extractLargestConnectedComponent(G).numberOfNodes() / n)
 
 
 def top_nodes(data, pro, n):
