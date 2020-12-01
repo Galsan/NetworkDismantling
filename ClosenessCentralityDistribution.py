@@ -41,7 +41,7 @@ def saveFig(name):
     plt.figure(figsize=[8, 5])
     plt.title('Closeness centrality(' + name + ')')
     plt.ylabel('Нягтын функц')
-    plt.xlabel('Closeness онооны * 10^3')
+    plt.xlabel('Closeness оноо * 10^3')
     plt.grid(True)
     plt.yscale('logit')
     # 1-р хувьсагч: плот нь х тэнхлэгтээ бүхэл тоон утга авдаг учир 10ын 3н зэрэгтээр үржлээ

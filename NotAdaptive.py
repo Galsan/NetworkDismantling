@@ -7,7 +7,7 @@ import math
 import GraphTool as gt
 
 # Adaptive бишээр 10, 15, 20, 25 хувийг устгасны дараах үр дүн
-END = 25
+END = 70
 BEGIN = 0
 dat_dc = []
 dat_bc = []
@@ -115,7 +115,7 @@ def largestComp(fileLoc):
 
 def main():
     nk.setNumberOfThreads(4)
-    name = 'Astroph'
+    name = 'Yeast1'
     largestComp('TextFiles/' + str(name) + '.txt')
     plt.grid(True)
     plt.plot(percents, dat_dc, label='Degree centrality', color='#000000', linestyle='solid')
